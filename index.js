@@ -1,7 +1,7 @@
 const axios= require("axios");
 const fs = require('fs');
 
-//PARTE EXPRESS/EJS
+//------------------------------------------PARTE EXPRESS/EJS-------------------------------------
 const ejs=require('ejs');
 const express=require('express');
 const app=express();
@@ -14,7 +14,7 @@ app.use(express.urlencoded({
 app.use(express.static(__dirname));
 app.set("view engine","ejs");
 
-//VARIABILE GLOBALE, LA IMPOSTO IN GETPOKEBYNOME
+//VARIABILE GLOBALE, LA IMPOSTO IN GETPOKEBYNOMEEJS
 let miopokemon={
     nome:"",
     foto:"",
@@ -32,7 +32,7 @@ app.post("/",function(req,res){
 });
 app.listen(port,()=> console.log(`Attivo sulla porta ${port}`));
 
-//PARTE COMMANDER
+//----------------------------------------PARTE COMMANDER----------------------------------------
 var program=require('commander');
 program
     .version('0.1.0')
@@ -45,11 +45,10 @@ console.log("Puoi provare una demo del bot da qui! Inserisci un comando...");
 if(options.ability)console.log("Hai scelto abilità");
 if(options.comandi) console.log(" \n trova - [nome pokemon] \n mossa - [nome mossa] \n ability - [nome abilità] \n tipo - [nome tipo] elenco pokemon di un certo tipo \n info_tipo - [nome tipo] dettagli del tipo cercato \n pokedex - [nome pokedex] se inserito il nome del pokedex stampa i pokemon di quel pokedex, sennò stampa tutti i nomi dei pokedex \n statistiche_pokemon - [nome pokemon] restituisce il numero di volte che il pokemon è stato cercato \n bacca - [nome bacca/ vuoto per stampare tutte le bacche]");
 
-//PARTE BOT
+//-------------------------------------------------------PARTE BOT-------------------------------------------------------
 const Telegram_Bot= require("node-telegram-bot-api");
 const exp = require("constants");
 const token="6035386460:AAE79i54bmEbYIzeqxTjNr9To5f0lvjfysw";
-
 url="https://pokeapi.co/api/v2/pokemon/";
 
 const bot = new Telegram_Bot(token,{
@@ -134,6 +133,8 @@ bot.on('callback_query', function (message) {
 //VEDO GLI ERRORI
 bot.on("polling_error", console.log);
 
+//----------------------------METODI DEL BOT ED EJS------------------------------
+
 //CREATO AD HOC PER IL FILE EJS
 async function GetPokeDalNomeEJS(nome){
     
@@ -162,6 +163,7 @@ async function GetPokeDalNomeEJS(nome){
     
 }
 
+//INFO POKEMON DAL SUO NOME
 async function GetPokeDalNome(id,nome){
     
     const url="https://pokeapi.co/api/v2/pokemon/";
@@ -194,6 +196,7 @@ async function GetPokeDalNome(id,nome){
     
 }
 
+//INFO ABILITY DAL NOME
 async function GetAbility(id,nome_abilità)
 {
     const url="https://pokeapi.co/api/v2/ability/";
@@ -333,6 +336,7 @@ function GetViewedPokemon(nomepokemon){
     });
     return count;
 }
+
 //DETTAGLI BACCA
 async function GetBerry(id,bacca)
 {
@@ -344,6 +348,7 @@ async function GetBerry(id,bacca)
     bot.sendMessage(id, "<b>DETTAGLI BACCA "+dati.name.toUpperCase()+"</b> \n \n <pre>CONSISTENZA: "+dati.firmness.name +"</pre>\n \n <pre>TEMPO DI CRESCITA: "+dati.growth_time +" ore</pre> \n \n <pre>SAPORE: "+dati.flavors[0].flavor.name +"</pre>", 
     {parse_mode:"HTML"});
 }
+
 //LISTA BACCHE ESISTENTI 
 async function ListBerries(id)
 {
