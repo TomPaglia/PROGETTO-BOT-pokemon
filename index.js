@@ -1,9 +1,54 @@
 const axios= require("axios");
-
 const fs = require('fs');
+
+//PARTE EXPRESS/EJS
+const ejs=require('ejs');
+const express=require('express');
+const app=express();
+const port=3000;
+
+app.use(express.urlencoded({
+    extended:true
+}));
+
+app.use(express.static(__dirname));
+app.set("view engine","ejs");
+
+//VARIABILE GLOBALE, LA IMPOSTO IN GETPOKEBYNOME
+let miopokemon={
+    nome:"",
+    foto:"",
+    abilita:"",
+    tipo:""
+};
+
+app.get("/",function(req,res){
+    res.render("pokemon", {pokemon:miopokemon});
+});
+
+app.post("/",function(req,res){
+    GetPokeDalNomeEJS(req.body.nome)
+    res.redirect("/");
+});
+app.listen(port,()=> console.log(`Attivo sulla porta ${port}`));
+
+
+//PARTE COMMANDER
+var program=require('commander');
+program
+    .version('0.1.0')
+    .option('-a, --ability','Trova informazioni sulle abilità')
+    .option('-c, --comandi','Elenco comandi DEL BOT NON DEL COMMANDER')
+    .parse(process.argv);
+const options= program.opts();
+
+console.log("Puoi provare una demo del bot da qui! Inserisci un comando...");
+if(options.ability){console.log("Hai scelto abilità");}
+if(options.comandi) console.log(" \n trova - [nome pokemon] \n mossa - [nome mossa] \n ability - [nome abilità] \n tipo - [nome tipo] elenco pokemon di un certo tipo \n info_tipo - [nome tipo] dettagli del tipo cercato \n pokedex - [nome pokedex] se inserito il nome del pokedex stampa i pokemon di quel pokedex, sennò stampa tutti i nomi dei pokedex \n statistiche_pokemon - [nome pokemon] restituisce il numero di volte che il pokemon è stato cercato \n bacca - [nome bacca/ vuoto per stampare tutte le bacche]");
 
 
 const Telegram_Bot= require("node-telegram-bot-api");
+const exp = require("constants");
 const token="6035386460:AAE79i54bmEbYIzeqxTjNr9To5f0lvjfysw";
 
 url="https://pokeapi.co/api/v2/pokemon/";
@@ -57,7 +102,7 @@ bot.onText(/\/pokedex/,(msg)=>{
     if(msg.text.toString().length>8){
         let regione= msg.text.toString().substring(9).toLowerCase();
         GetPokedex(msg.chat.id, regione );
-    } else { DisplayPokedex(msg.chat.id);}
+    } else { ListPokedex(msg.chat.id);}
 });
 
 bot.onText(/\/statistiche_pokemon/,(msg)=>{
@@ -65,6 +110,13 @@ bot.onText(/\/statistiche_pokemon/,(msg)=>{
         let nome= msg.text.toString().substring(21).toLowerCase();
         bot.sendMessage(msg.chat.id, nome+" è stato cercato " + GetViewedPokemon(nome)+ " volte");
     }else{ bot.sendMessage(msg.chat.id, "SINTASSI ERRATA");}
+})
+
+bot.onText(/\/bacca/,(msg)=>{
+    if(msg.text.toString().length>6){
+        let bacca= msg.text.toString().substring(7).toLowerCase();
+        GetBerry(msg.chat.id,bacca);
+    }else{ListBerries(msg.chat.id); }
 })
 
 //VARIABILI GLOBALI PER LA PAGINAZIONE
@@ -81,6 +133,34 @@ bot.on('callback_query', function (message) {
 
 bot.on("polling_error", console.log);
 
+//CREATO AD HOC PER IL FILE EJS
+async function GetPokeDalNomeEJS(nome){
+    
+    const url="https://pokeapi.co/api/v2/pokemon/";
+    const new_url=url.concat(nome);
+    let res= await axios.get(new_url);
+    let dati= res.data;
+
+    //CREO IL POKEMON DA MANDARE NELL'EJS
+    miopokemon={
+        nome:dati.name,
+        foto:dati.sprites.other.home.front_default,
+        abilita:dati.abilities[0].ability.name,
+        tipo:dati.types[0].type.name
+    };
+    
+    /*AGGIORNO FILE JSON*/
+    var data = fs.readFileSync('json/pokemon.json');
+    var myObject= JSON.parse(data);
+    
+    /*AGGIUNGO IL MIO NUOVO RECORD AL FILE JSON*/
+    let AddData={"nome": dati.name};
+    myObject.push(AddData);
+    newMyObj=JSON.stringify(myObject);
+    fs.writeFileSync('json/pokemon.json',newMyObj);
+    
+}
+
 async function GetPokeDalNome(id,nome){
     
     const url="https://pokeapi.co/api/v2/pokemon/";
@@ -88,11 +168,18 @@ async function GetPokeDalNome(id,nome){
     let res= await axios.get(new_url);
     let dati= res.data;
     /*Aggiungere metodo per fare il display delle mosse del pokemon */
-    bot.sendPhoto(id, dati.sprites.other.home.front_default,{
-        caption: "<b>INFO CARTA:</b> \n \n <pre><b>NAME:</b> "+dati.name+" </pre> \n \n <pre><b>ABILITY:</b> <i>"+dati.abilities[0].ability.name+"</i> </pre> \n \n <pre><b>TYPE:</b> "+dati.types[0].type.name+"</pre>\n \n <pre><b>PESO:</b> "+dati.weight/10+"kg</pre> \n \n <pre><b>ALTEZZA:</b> "+dati.height/10+"m</pre>",
-        parse_mode:"HTML"
-    });
-    bot.sendMessage(id, "Usa il comando /ability per scoprire di più sull'abilità di "+dati.name+"!");
+    if(dati.sprites.other.home.front_default != null)
+    {
+        bot.sendPhoto(id, dati.sprites.other.home.front_default,{
+            caption: "<b>INFO CARTA:</b> \n \n <pre><b>NAME:</b> "+dati.name+" </pre> \n \n <pre><b>ABILITY:</b> <i>"+dati.abilities[0].ability.name+"</i> </pre> \n \n <pre><b>TYPE:</b> "+dati.types[0].type.name+"</pre>\n \n <pre><b>PESO:</b> "+dati.weight/10+"kg</pre> \n \n <pre><b>ALTEZZA:</b> "+dati.height/10+"m</pre>",
+            parse_mode:"HTML"
+        });
+        bot.sendMessage(id, "Usa il comando /ability per scoprire di più sull'abilità di "+dati.name+"!");
+    }else 
+    {   
+        bot.sendMessage(id," IMMAGINE NON TROVATA :( \n \n<b>INFO CARTA:</b> \n \n <pre><b>NAME:</b> "+dati.name+" </pre> \n \n <pre><b>ABILITY:</b> <i>"+dati.abilities[0].ability.name+"</i> </pre> \n \n <pre><b>TYPE:</b> "+dati.types[0].type.name+"</pre>\n \n <pre><b>PESO:</b> "+dati.weight/10+"kg</pre> \n \n <pre><b>ALTEZZA:</b> "+dati.height/10+"m</pre>",
+        {parse_mode:"HTML"})
+    }
     
     /*AGGIORNO FILE JSON*/
     var data = fs.readFileSync('json/pokemon.json');
@@ -195,7 +282,7 @@ async function GetInfoTipo(id,type){
 }
 
 //ELENCO POKEDEX ESISTENTI
-async function DisplayPokedex(id){
+async function ListPokedex(id){
     
     const url="https://pokeapi.co/api/v2/pokedex";
     let res= await axios.get(url);
@@ -243,6 +330,33 @@ function GetViewedPokemon(nomepokemon){
         }
     });
     return count;
+}
+//DETTAGLI BACCA
+async function GetBerry(id,bacca)
+{
+    const url="https://pokeapi.co/api/v2/berry/";
+    const new_url=url.concat(bacca);
+    let res= await axios.get(new_url);
+    let dati= res.data;
+    
+    bot.sendMessage(id, "<b>DETTAGLI BACCA "+dati.name.toUpperCase()+"</b> \n \n <pre>CONSISTENZA: "+dati.firmness.name +"</pre>\n \n <pre>TEMPO DI CRESCITA: "+dati.growth_time +" ore</pre> \n \n <pre>SAPORE: "+dati.flavors[0].flavor.name +"</pre>", 
+    {parse_mode:"HTML"});
+}
+//LISTA BACCHE ESISTENTI 
+async function ListBerries(id)
+{
+    const url="https://pokeapi.co/api/v2/berry/";
+    let res= await axios.get(url);
+    let dati= res.data;
+
+    var elenco=[];
+    dati.results.forEach(bacca => {
+        elenco.push(bacca.name+"\n");
+    });
+    Pagine=elenco.length/10;
+    array=elenco;
+    messaggio="\n ELENCO BACCHE: \n \n";
+    bot.sendMessage(id, "\n ELENCO BACCHE: \n \n "+ elenco.slice(0,10).join(' '), getPagination(1,Pagine.toFixed(0)));
 }
 
 /*TEST*/

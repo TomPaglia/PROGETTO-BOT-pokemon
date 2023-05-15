@@ -1,0 +1,28 @@
+<h1>Visualizzazione carina (ricarica la pagina per vedere il pokemon nuovo)</h1>
+
+<thead>
+<table border="1">
+    <tr>
+    <th>Name</th>
+    <th>Image</th>
+    <th>Type</th>
+    <th>Ability</th>
+    </tr>
+</thead>
+<!-- bulbasaur -->
+<tbody>
+<tr>
+    <td><%= pokemon.nome %></td>
+    <td><img style="height: 100px; width: 100px;" id="immagine" src=<%= pokemon.foto %>></td>
+    <td><%= pokemon.tipo %></td>
+    <td><%= pokemon.abilita %></a></td>
+</tr>
+</tbody>
+</table>
+<br>
+<br>
+<form action="/" method="POST">
+    <label for="nome">Inserisci il nome del pokemon che vuoi cercare</label>
+    <input type="text" name="nome" value="">
+    <input type="submit" value="CERCA">
+</form>
