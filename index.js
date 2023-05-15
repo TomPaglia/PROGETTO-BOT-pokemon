@@ -1,6 +1,6 @@
 const axios= require("axios");
 const fs = require('fs');
-
+require('dotenv').config();
 //------------------------------------------PARTE EXPRESS/EJS-------------------------------------
 const ejs=require('ejs');
 const express=require('express');
@@ -48,7 +48,7 @@ if(options.comandi) console.log(" \n trova - [nome pokemon] \n mossa - [nome mos
 //-------------------------------------------------------PARTE BOT-------------------------------------------------------
 const Telegram_Bot= require("node-telegram-bot-api");
 const exp = require("constants");
-const token="6035386460:AAE79i54bmEbYIzeqxTjNr9To5f0lvjfysw";
+const token=process.env.token;
 url="https://pokeapi.co/api/v2/pokemon/";
 
 const bot = new Telegram_Bot(token,{
