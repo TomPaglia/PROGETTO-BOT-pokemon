@@ -32,7 +32,6 @@ app.post("/",function(req,res){
 });
 app.listen(port,()=> console.log(`Attivo sulla porta ${port}`));
 
-
 //PARTE COMMANDER
 var program=require('commander');
 program
@@ -43,10 +42,10 @@ program
 const options= program.opts();
 
 console.log("Puoi provare una demo del bot da qui! Inserisci un comando...");
-if(options.ability){console.log("Hai scelto abilità");}
+if(options.ability)console.log("Hai scelto abilità");
 if(options.comandi) console.log(" \n trova - [nome pokemon] \n mossa - [nome mossa] \n ability - [nome abilità] \n tipo - [nome tipo] elenco pokemon di un certo tipo \n info_tipo - [nome tipo] dettagli del tipo cercato \n pokedex - [nome pokedex] se inserito il nome del pokedex stampa i pokemon di quel pokedex, sennò stampa tutti i nomi dei pokedex \n statistiche_pokemon - [nome pokemon] restituisce il numero di volte che il pokemon è stato cercato \n bacca - [nome bacca/ vuoto per stampare tutte le bacche]");
 
-
+//PARTE BOT
 const Telegram_Bot= require("node-telegram-bot-api");
 const exp = require("constants");
 const token="6035386460:AAE79i54bmEbYIzeqxTjNr9To5f0lvjfysw";
@@ -56,6 +55,8 @@ url="https://pokeapi.co/api/v2/pokemon/";
 const bot = new Telegram_Bot(token,{
     polling:true
 });
+
+//------------------------------COMANDI-----------------------------
 
 bot.onText(/\/start/,(msg)=>{
     bot.sendPhoto(msg.chat.id,"C:/Users/133098/Downloads/wllp.jpg",{
@@ -119,7 +120,7 @@ bot.onText(/\/bacca/,(msg)=>{
     }else{ListBerries(msg.chat.id); }
 })
 
-//VARIABILI GLOBALI PER LA PAGINAZIONE
+//----------------------------VARIABILI GLOBALI PER LA PAGINAZIONE E CALLBACK_QUERY------------------------------
 var Pagine;
 var array;
 var pagina;
@@ -130,7 +131,7 @@ bot.on('callback_query', function (message) {
     bot.editMessageText(messaggio+array.slice(pagina*10, (pagina*10)+10).join(' '), editOptions);
 });
 
-
+//VEDO GLI ERRORI
 bot.on("polling_error", console.log);
 
 //CREATO AD HOC PER IL FILE EJS
@@ -149,11 +150,11 @@ async function GetPokeDalNomeEJS(nome){
         tipo:dati.types[0].type.name
     };
     
-    /*AGGIORNO FILE JSON*/
+    //AGGIORNO FILE JSON
     var data = fs.readFileSync('json/pokemon.json');
     var myObject= JSON.parse(data);
     
-    /*AGGIUNGO IL MIO NUOVO RECORD AL FILE JSON*/
+    //AGGIUNGO IL MIO NUOVO RECORD AL FILE JSON
     let AddData={"nome": dati.name};
     myObject.push(AddData);
     newMyObj=JSON.stringify(myObject);
@@ -167,7 +168,7 @@ async function GetPokeDalNome(id,nome){
     const new_url=url.concat(nome);
     let res= await axios.get(new_url);
     let dati= res.data;
-    /*Aggiungere metodo per fare il display delle mosse del pokemon */
+    //VERIFICO SE L'IMMAGINE ESISTA
     if(dati.sprites.other.home.front_default != null)
     {
         bot.sendPhoto(id, dati.sprites.other.home.front_default,{
@@ -200,7 +201,7 @@ async function GetAbility(id,nome_abilità)
     let res= await axios.get(new_url);
     let dati= res.data;
     
-    /*VERIFICO CHE L'EFFETTO SIA IN INGLESE */
+    //VERIFICO CHE L'EFFETTO SIA IN INGLESE 
     dati.effect_entries.forEach(val => {
         if(val.language.name=="en")
         effetto_ing=val;
@@ -208,57 +209,57 @@ async function GetAbility(id,nome_abilità)
     
     bot.sendMessage(id, "<b>DETTAGLI ABILITÀ "+dati.name.toUpperCase()+"</b> \n \n <pre>EFFETTO: "+effetto_ing.effect +"</pre>\n \n <pre>GENERAZIONE D' USCITA: "+dati.generation.name +"</pre>", {parse_mode:"HTML"});
 
-    /*AGGIORNO FILE JSON*/
+    //AGGIORNO FILE JSON
     var data = fs.readFileSync('json/abilita.json');
     var myObject= JSON.parse(data);
     
-    /*AGGIUNGO IL MIO NUOVO RECORD AL FILE JSON*/
+    //AGGIUNGO IL MIO NUOVO RECORD AL FILE JSON
     let AddData={"nome": dati.name};
     myObject.push(AddData);
     newMyObj=JSON.stringify(myObject);
     fs.writeFileSync('json/abilita.json',newMyObj);
 }
 
-/* DETTAGLI DI UNA MOSSA*/
+// DETTAGLI DI UNA MOSSA
 async function GetMove(id,move_name){
     
     const url="https://pokeapi.co/api/v2/move/";
     const new_url=url.concat(move_name);
     let res= await axios.get(new_url);
     let dati= res.data;
-/*dovrebbe andare*/
+//VERIFICO EFFETTO IN INGLESE
 dati.effect_entries.forEach(val => {
     if(val.language.name=="en")
     effetto_ing=val;
 });
 
 bot.sendMessage(id, "<b>DETTAGLIO MOSSA " +dati.name.toUpperCase() +"</b> \n \n<pre> Effetto: " +effetto_ing.short_effect +"</pre> \n \n<pre> Accuratezza: " +dati.accuracy +"%</pre> \n \n<pre> Tipo: " +dati.type.name +"</pre> \n \n<pre> Generazione d'uscita: " +dati.generation.name +"</pre>",{parse_mode:"HTML"});
-/*AGGIORNO FILE JSON*/
+//AGGIORNO FILE JSON
 var data = fs.readFileSync('json/mosse.json');
 var myObject= JSON.parse(data);
 
-/*AGGIUNGO IL MIO NUOVO RECORD AL FILE JSON*/
+//AGGIUNGO IL MIO NUOVO RECORD AL FILE JSON
 let AddData={"nome": dati.name};
 myObject.push(AddData);
 newMyObj=JSON.stringify(myObject);
 fs.writeFileSync('json/mosse.json',newMyObj);    
 }
 
-/* ELENCO DEI POKEMON DI UN CERTO TIPO */
+//ELENCO DEI POKEMON DI UN CERTO TIPO 
 async function GetPokemonByType(id,type){
     
     const url="https://pokeapi.co/api/v2/type/";
     const new_url=url.concat(type);
     let res= await axios.get(new_url);
     let dati= res.data;
+    //CREO ELENCO
     let elenco=[];
-    /*dati.pokemon[0].pokemon.name come display?*/
     dati.pokemon.forEach(nome => {
         elenco.push("\n"+nome.pokemon.name+"\n")
     });
     Pagine=elenco.length/10;
     array=elenco;
-    messaggio= "ELENCO POKEMON TIPO " +dati.name.toUpperCase() +"\n \n";
+    messaggio= "ELENCO POKEMON TIPO " +dati.name.toUpperCase() +"\n \n"; //MESSAGGIO PER PAGINATION
     bot.sendMessage(id, "ELENCO POKEMON TIPO " +dati.name.toUpperCase() +"\n \n" +elenco.slice(0,10).join(' '),getPagination(1,Pagine.toFixed(0)));
     bot.sendMessage(id, "Usa il comando /info_tipo per scoprire di più sul tipo "+dati.name+"!");
 
@@ -271,8 +272,8 @@ async function GetInfoTipo(id,type){
     const new_url=url.concat(type);
     let res= await axios.get(new_url);
     let dati= res.data;
+    //CREO IL MIO ELENCO
     let elenco=" ";
-    /*dati.pokemon[0].pokemon.name come display?*/
     dati.pokemon.forEach(nome => {
         elenco=elenco+"\n"+nome.pokemon.name+"\n";
     });
@@ -287,14 +288,14 @@ async function ListPokedex(id){
     const url="https://pokeapi.co/api/v2/pokedex";
     let res= await axios.get(url);
     let dati= res.data;
+    //CREO ELENCO POKEDEX
     var elenco=[];
     dati.results.forEach(poke => {
         elenco.push(poke.name+"\n");
     });
     Pagine=elenco.length/10;
     array=elenco;
-    messaggio="\n POKEDEX DISPONIBILI: \n \n";
-    //bot.sendMessage(id, "<b>POKEDEX DISPONIBILI: </b>\n \n <pre>" +elenco +"</pre>",{parse_mode:"HTML"},getPagination(1,20)); 
+    messaggio="\n POKEDEX DISPONIBILI: \n \n"; //PREPARO IL MESS. X PAGINATION
     bot.sendMessage(id,"\n POKEDEX DISPONIBILI:\n \n "+elenco.slice(0,10).join(' '), getPagination(1,Pagine.toFixed(0)));
     bot.sendMessage(id, "<b>ABBINALI AL COMANDO /pokedex PER OTTENERE DETTAGLI SUI POKEDEX REGIONALI!</b>",{parse_mode:"HTML"});
     
@@ -307,20 +308,21 @@ async function GetPokedex(id,regione){
     const new_url=url.concat(regione);
     let res= await axios.get(new_url);
     let dati= res.data;
+    //PREPARO ELENCO
     let elenco=[];
-    
     dati.pokemon_entries.forEach(poke => {
         elenco.push("\n"+"#"+poke.entry_number+" "+poke.pokemon_species.name+"\n");
     });
     Pagine=elenco.length/10;
     array=elenco;
-    messaggio="POKEDEX DELLA REGIONE DI " +dati.name.toUpperCase();
+    messaggio="POKEDEX DELLA REGIONE DI " +dati.name.toUpperCase(); //MESSAGGIO PAGINATION
     bot.sendMessage(id, "POKEDEX DELLA REGIONE DI " +dati.name.toUpperCase() +", GIOCO POKEMON "+dati.version_groups[0].name.toUpperCase()+"\n \n " +elenco.slice(0,10).join(' '),getPagination(1,Pagine.toFixed(0)));
 }
 
 //QUANTE VOLTE UN POKEMON VIENE CERCATO ALL TIME
 function GetViewedPokemon(nomepokemon){
 
+    //CERCO NEL MIO FILE IL NOME DEL POKEMON
     var data = fs.readFileSync('json/pokemon.json');
     var myObject= JSON.parse(data);
     let count=0;
@@ -348,7 +350,7 @@ async function ListBerries(id)
     const url="https://pokeapi.co/api/v2/berry/";
     let res= await axios.get(url);
     let dati= res.data;
-
+    //PAGINAZIONE COME IN PRECEDENZA
     var elenco=[];
     dati.results.forEach(bacca => {
         elenco.push(bacca.name+"\n");
@@ -359,7 +361,7 @@ async function ListBerries(id)
     bot.sendMessage(id, "\n ELENCO BACCHE: \n \n "+ elenco.slice(0,10).join(' '), getPagination(1,Pagine.toFixed(0)));
 }
 
-/*TEST*/
+//PAGINAZIONE
 function getPagination( current, maxpage ) {
 var keys = [];
 if (current>1) {keys.push({ text: `«1`, callback_data: '1' })};
